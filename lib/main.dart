@@ -99,6 +99,11 @@ class _DrawPageState extends State<DrawPage> {
   List<Offset>? _current;
   String _currentChar = 'A';
 
+  // New state for color and stroke width
+  Color _strokeColor = Colors.deepPurple;
+  // default inside the limited allowed range
+  double _strokeWidth = 40.0;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -148,52 +153,113 @@ class _DrawPageState extends State<DrawPage> {
           child: RepaintBoundary(
             child: CustomPaint(
               size: size,
-              painter: _LetterMaskPainter(List.of(_strokes), letter: _currentChar),
+              painter: _LetterMaskPainter(List.of(_strokes),
+                  letter: _currentChar, color: _strokeColor, strokeWidth: _strokeWidth),
             ),
           ),
         );
       }),
       bottomNavigationBar: SizedBox(
-        height: 80,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
-          child: Row(
-            children: List.generate(26, (i) {
-              final ch = String.fromCharCode(65 + i);
-              final selected = ch == _currentChar;
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _currentChar = ch;
-                      _strokes.clear(); // clear strokes when switching letters
-                    });
-                  },
-                  child: Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: selected ? Colors.blueAccent : Colors.white,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: selected ? Colors.blue.shade700 : Colors.grey.shade400),
-                      boxShadow: selected ? [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0,2))] : null,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      ch,
-                      style: TextStyle(
-                        color: selected ? Colors.white : Colors.black87,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
+        height: 140,
+        child: Column(
+          children: [
+            // Color picker and stroke width slider
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+              child: Row(
+                children: [
+                  Text('Color:', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 8),
+                  // few color choices
+                  _buildColorChoice(Colors.deepPurple),
+                  _buildColorChoice(Colors.redAccent),
+                  _buildColorChoice(Colors.green),
+                  _buildColorChoice(Colors.orange),
+                  _buildColorChoice(Colors.blue),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Text('W', style: TextStyle(fontWeight: FontWeight.w600)),
+                        Expanded(
+                          child: Slider(
+                            min: 30,
+                            max: 50,
+                            divisions: 20,
+                            value: _strokeWidth.clamp(30.0, 50.0),
+                            onChanged: (v) => setState(() => _strokeWidth = v.clamp(30.0, 50.0)),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Text(_strokeWidth.toStringAsFixed(0)),
+                      ],
                     ),
                   ),
+                ],
+              ),
+            ),
+            // alphabet picker
+            SizedBox(
+              height: 68,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+                child: Row(
+                  children: List.generate(26, (i) {
+                    final ch = String.fromCharCode(65 + i);
+                    final selected = ch == _currentChar;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _currentChar = ch;
+                            _strokes.clear(); // clear strokes when switching letters
+                          });
+                        },
+                        child: Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: selected ? Colors.blueAccent : Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: selected ? Colors.blue.shade700 : Colors.grey.shade400),
+                            boxShadow: selected ? [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0,2))] : null,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            ch,
+                            style: TextStyle(
+                              color: selected ? Colors.white : Colors.black87,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
                 ),
-              );
-            }),
-          ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildColorChoice(Color c) {
+    final bool selected = c == _strokeColor;
+    return GestureDetector(
+      onTap: () => setState(() => _strokeColor = c),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 6.0),
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: c,
+          shape: BoxShape.circle,
+          border: selected ? Border.all(color: Colors.black54, width: 2) : null,
         ),
       ),
     );
@@ -204,7 +270,9 @@ class _DrawPageState extends State<DrawPage> {
 class _LetterMaskPainter extends CustomPainter {
   final List<List<Offset>> strokes;
   final String letter;
-  _LetterMaskPainter(this.strokes, {this.letter = 'A'});
+  final Color color;
+  final double strokeWidth;
+  _LetterMaskPainter(this.strokes, {this.letter = 'A', this.color = Colors.deepPurple, this.strokeWidth = 16.0});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -229,9 +297,9 @@ class _LetterMaskPainter extends CustomPainter {
 
     // Stroke paint (child drawing)
     final Paint strokePaint = Paint()
-      ..color = Colors.deepPurple
+      ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 16.0
+      ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..isAntiAlias = true;
@@ -276,6 +344,6 @@ class _LetterMaskPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _LetterMaskPainter old) {
-    return old.strokes.length != strokes.length || old.strokes != strokes || old.letter != letter;
+    return old.strokes.length != strokes.length || old.strokes != strokes || old.letter != letter || old.color != color || old.strokeWidth != strokeWidth;
   }
 }
