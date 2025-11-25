@@ -160,7 +160,7 @@ class _DrawPageState extends State<DrawPage> {
         );
       }),
       bottomNavigationBar: SizedBox(
-        height: 140,
+        height: 180,
         child: Column(
           children: [
             // Color picker and stroke width slider
@@ -242,6 +242,9 @@ class _DrawPageState extends State<DrawPage> {
                 ),
               ),
             ),
+            SizedBox(
+              height: 56,
+            )
           ],
         ),
       ),
