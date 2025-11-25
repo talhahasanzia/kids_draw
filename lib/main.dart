@@ -38,12 +38,12 @@ Path _parseGlyph(String ch) {
   return fallback;
 }
 
-// Top-level control: only flip glyphs that are known to be in font (y-up) coordinates.
-// Leave empty by default; add entries like `_glyphNeedsFlip['A'] = true;` if a glyph
-// parsed from `glyphD` needs a vertical flip to match Flutter's y-down canvas.
-final Map<String, bool> _glyphNeedsFlip = {
-  // 'A': true, // uncomment if your 'A' came from a font and appears upside-down
-};
+// Top-level control: flip glyphs that are known to be in font (y-up) coordinates.
+// We enable flipping for all uppercase English letters A..Z by default per your request.
+// The flip button in the UI still toggles the per-letter entry.
+final Map<String, bool> _glyphNeedsFlip = Map.fromEntries(
+  List.generate(26, (i) => MapEntry(String.fromCharCode(65 + i), true)),
+);
 
 // Returns a transformed Path that fits the glyph into the provided size.
 // If the glyph was extracted from a font (exists in glyphD), we flip Y to
